@@ -9,6 +9,7 @@
             "random_max": "2h"
         }
     ],
-    "psbot_url": "https://psbot.mitaka.nl/api/play",
-    "guild": "972617390816915516"
+    "psbot_url": "",
+    "guild": ""
+
 }
