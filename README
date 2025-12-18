@@ -1,5 +1,8 @@
-A go application that sends a POST request at a random interval,
-the POST request that it was originally made was for playing a sound effect with a discord bot as a joke.
+A go application that sends a POST request at a random interval, It uses goroutines for multiple routines for sound effects to be randomly played.
 
+This program is made for a private discord bot maintains and develops by my friend that exposes an API to play Sound effects in a Discord Voice channel.
+Without it, this program is useless for you. This is just a practice to learn how goroutines etc works.
 
-The source code is a shitpost.
+This originally started as a joke to play random Smoke detector low battery beeps on random intervals, to joke about that the bot needs its batteries to be placed.
+
+but now this got extended to also play random Minecraft cave sounds, cat sounds etc.
