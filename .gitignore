@@ -26,3 +26,5 @@ go.work.sum
 
 #WHY
 .vscode
+
+config/config.json
