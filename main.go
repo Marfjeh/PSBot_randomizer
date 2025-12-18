@@ -22,6 +22,7 @@ type Config struct {
 }
 
 type Event struct {
+	Name			string	 `json:"name"`
 	RandomMin string   `json:"random_min"`
 	RandomMax string   `json:"random_max"`
 	Sounds    []string `json:"sounds"`
@@ -33,11 +34,13 @@ type PsbotBody struct {
 	Sound string `json:"sound"`
 }
 
+//Calcuate a random time between two values and return that.
 func randomDuration(min, max time.Duration) time.Duration {
-	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixMilli())))
+	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixNano())))
 	return min + time.Duration(r.Int64N(int64(max-min)))
 }
 
+//Send an POST request to the server to play the sound
 func playSound(ctx context.Context, url string, UserAgent string, Psbot PsbotBody) error {
 	b := bytes.NewBuffer([]byte{})
 	_ = json.NewEncoder(b).Encode(Psbot)
@@ -63,8 +66,10 @@ func playSound(ctx context.Context, url string, UserAgent string, Psbot PsbotBod
 	return nil
 }
 
+//Setup thread
 func StartPlaying(ctx context.Context, e Event, guildID string, psbotURL string) error {
-	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixMilli())))
+	//Seed the randomizer
+	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixNano())))
 	randomMin, err := time.ParseDuration(e.RandomMin)
 	if err != nil {
 		return err
@@ -78,7 +83,7 @@ func StartPlaying(ctx context.Context, e Event, guildID string, psbotURL string)
 X:
 	for {
 		randomTime := randomDuration(randomMin, randomMax)
-		log.Printf("Waiting for running teh sound %q\n", randomTime.String())
+		log.Printf("[%s] Waiting for: %q\n", e.Name, randomTime.String())
 		select {
 		case <-ctx.Done():
 			break X
