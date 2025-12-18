@@ -1,0 +1,14 @@
+{
+    "events": [
+        {
+            "useragent": "Psbot_randomizer",
+            "sounds" : [
+                "cave"
+            ],
+            "random_min": "1m",
+            "random_max": "2h"
+        }
+    ],
+    "psbot_url": "https://psbot.mitaka.nl/api/play",
+    "guild": "972617390816915516"
+}

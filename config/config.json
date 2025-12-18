@@ -1,0 +1,48 @@
+{
+    "events": [
+        {
+            "useragent": "Minecraft Beta/1.7.3 Le funny cave sound xDDD",
+            "sounds" : [
+                "cave",
+                "cave2",
+                "cave3",
+                "cave4",
+                "cave5",
+                "cave6",
+                "cave7",
+                "cave8",
+                "cave9",
+                "cave10",
+                "cave11",
+                "cave12",
+                "cave13"
+            ],
+            "random_min": "1m",
+            "random_max": "2h"
+        },
+        {
+            "useragent": "Minecraft Beta/1.7.3 Meow OwO",
+            "sounds" : [
+                "minecraft_cat1",
+                "minecraft_cat2",
+                "minecraft_cat3",
+                "minecraft_cat4",
+                "minecraft_cat5",
+                "minecraft_cat6",
+                "jack_meow"
+            ],
+            "random_min": "10m",
+            "random_max": "4h"
+        },
+        {
+            "useragent": "Smoke Detector/1.0 battery is low",
+            "sounds" : [
+                "black_noise"
+            ],
+            "random_min": "1m",
+            "random_max": "2h"
+        }
+    ],
+    "psbot_url": "https://psbot.mitaka.nl/api/play",
+    "guild": "972617390816915516"
+}

@@ -2,57 +2,119 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"math/rand"
+	"log"
+	"math/rand/v2"
 	"net/http"
+	"os"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
-func randomDuration(min, max time.Duration) time.Duration {
-	return min + time.Duration(rand.Int63n(int64(max-min)))
+type Config struct {
+	Events   []Event `json:"events"`
+	PsbotURL string  `json:"psbot_url"`
+	GuildID  string  `json:"guild"`
 }
 
-func makePostRequest(url string, payload []byte) error {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+type Event struct {
+	RandomMin string   `json:"random_min"`
+	RandomMax string   `json:"random_max"`
+	Sounds    []string `json:"sounds"`
+	UserAgent string   `json:"useragent"`
+}
+
+type PsbotBody struct {
+	Guild string `json:"guild"`
+	Sound string `json:"sound"`
+}
+
+func randomDuration(min, max time.Duration) time.Duration {
+	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixMilli())))
+	return min + time.Duration(r.Int64N(int64(max-min)))
+}
+
+func playSound(ctx context.Context, url string, UserAgent string, Psbot PsbotBody) error {
+	b := bytes.NewBuffer([]byte{})
+	_ = json.NewEncoder(b).Encode(Psbot)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, b)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Smoke Detector/1.0 battery is low")
+	req.Header.Set("User-Agent", UserAgent)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		fmt.Println("Send POST request, the people are safe again OwO:")
-	}
+	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
 		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusBadRequest {
+		fmt.Printf("Played sound %s in guild: %s\n", Psbot.Sound, Psbot.Guild)
+	} else {
+		return fmt.Errorf("%w: %q", errors.New("Did not got a sensible response from PSBOT :("), resp.Status)
+	}
+
+	return nil
+}
+
+func StartPlaying(ctx context.Context, e Event, guildID string, psbotURL string) error {
+	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixMilli())))
+	randomMin, err := time.ParseDuration(e.RandomMin)
+	if err != nil {
+		return err
+	}
+
+	randomMax, err := time.ParseDuration(e.RandomMax)
+	if err != nil {
+		return err
+	}
+
+X:
+	for {
+		randomTime := randomDuration(randomMin, randomMax)
+		log.Printf("Waiting for running teh sound %q\n", randomTime.String())
+		select {
+		case <-ctx.Done():
+			break X
+		case <-time.Tick(randomTime):
+			randomSoundIndex := r.IntN(len(e.Sounds))
+			err := playSound(ctx, psbotURL, e.UserAgent, PsbotBody{Guild: guildID, Sound: e.Sounds[randomSoundIndex]})
+			if err != nil {
+				log.Printf("Something went fucky wucky when playing a sound %v", err)
+			}
+		}
 	}
 
 	return nil
 }
 
 func main() {
-	fmt.Printf("Your smoke detector has low battery.")
-	rand.New(rand.NewSource(time.Now().UnixNano()))
- 
-	url := "URL HERE"
-	payload := []byte(`{"guild":"GUILD_HERE","sound":"black_noise"}`)
+	ctx := context.Background()
 
-	for {
-		duration := randomDuration(1*time.Minute, 2*time.Hour)
-		fmt.Printf("Waiting for %v\n", duration)
+	eg, ctx2 := errgroup.WithContext(ctx)
 
-		time.Sleep(duration)
-
-		fmt.Println("Low battery alert!111")
-
-		if err := makePostRequest(url, payload); err != nil {
-			fmt.Println("Error making POST request:", err)
-		}
-
-		fmt.Println("Going to sleep... Zzz...")
+	cfg, err := os.Open("./config/config.json")
+	if err != nil {
+		log.Fatalf("Unable to read config file! %v", err)
 	}
 
+	c := Config{}
+	err = json.NewDecoder(cfg).Decode(&c)
+
+	for _, e := range c.Events {
+		eg.Go(func() error {
+			return StartPlaying(ctx2, e, c.GuildID, c.PsbotURL)
+		})
+	}
+
+	err = eg.Wait()
+	if err != nil {
+		log.Fatalf("One of the threads got killed %v", err)
+	}
 }
