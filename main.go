@@ -17,10 +17,10 @@ import (
 )
 
 type Config struct {
-	Events     []Event     `json:"events"`
-	CronEvents []CronEvent `json:"cron_events"`
-	PsbotURL   string      `json:"psbot_url"`
-	GuildID    string      `json:"guild"`
+	RandomEvents []RandomEvent	`json:"events"`
+	CronEvents   []CronEvent	`json:"cron_events"`
+	PsbotURL     string		`json:"psbot_url"`
+	GuildID      string		`json:"guild"`
 }
 
 type CronEvent struct {
@@ -30,7 +30,7 @@ type CronEvent struct {
 	UserAgent string   `json:"useragent"`
 }
 
-type Event struct {
+type RandomEvent struct {
 	Name      string   `json:"name"`
 	RandomMin string   `json:"random_min"`
 	RandomMax string   `json:"random_max"`
@@ -81,7 +81,7 @@ func playSound(ctx context.Context, logger *slog.Logger, url string, UserAgent s
 }
 
 // Setup thread
-func StartPlaying(ctx context.Context, logger *slog.Logger, e Event, guildID string, psbotURL string) error {
+func StartPlaying(ctx context.Context, logger *slog.Logger, e RandomEvent, guildID string, psbotURL string) error {
 	// Seed the randomizer
 	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixNano())))
 	randomMin, err := time.ParseDuration(e.RandomMin)
@@ -152,7 +152,7 @@ func main() {
 	c := Config{}
 	_ = json.NewDecoder(cfg).Decode(&c)
 
-	for _, e := range c.Events {
+	for _, e := range c.RandomEvents {
 		eg.Go(func() error {
 			return StartPlaying(ctx2, logger.With("name", e.Name), e, c.GuildID, c.PsbotURL)
 		})
