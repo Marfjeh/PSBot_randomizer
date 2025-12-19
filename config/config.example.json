@@ -10,6 +10,14 @@
             "random_max": "2h"
         }
     ],
+    "cron_events": [
+      {
+        "name": "Cron example",
+        "useragent": "Psbot_randomizer",
+        "sounds": ["sound-to-play"],
+        "cron_expr": "0 3 * * *"
+      }
+    ],
     "psbot_url": "",
     "guild": ""
 
