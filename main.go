@@ -17,7 +17,7 @@ import (
 )
 
 type Config struct {
-	RandomEvents []RandomEvent	`json:"events"`
+	RandomEvents []RandomEvent	`json:"random_events"`
 	CronEvents   []CronEvent	`json:"cron_events"`
 	PsbotURL     string			`json:"psbot_url"`
 	GuildID      string			`json:"guild"`
