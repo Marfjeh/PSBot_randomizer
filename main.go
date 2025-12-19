@@ -12,13 +12,22 @@ import (
 	"os"
 	"time"
 
+	cron "github.com/robfig/cron/v3"
 	"golang.org/x/sync/errgroup"
 )
 
 type Config struct {
-	Events   []Event `json:"events"`
-	PsbotURL string  `json:"psbot_url"`
-	GuildID  string  `json:"guild"`
+	Events     []Event     `json:"events"`
+	CronEvents []CronEvent `json:"cron_events"`
+	PsbotURL   string      `json:"psbot_url"`
+	GuildID    string      `json:"guild"`
+}
+
+type CronEvent struct {
+	Name      string   `json:"name"`
+	CronExpr  string   `json:"cron_expr"`
+	Sounds    []string `json:"sounds"`
+	UserAgent string   `json:"useragent"`
 }
 
 type Event struct {
@@ -104,6 +113,29 @@ X:
 	return nil
 }
 
+func StartCron(ctx context.Context, logger *slog.Logger, c CronEvent, guildID string, psbotURL string) error {
+	// Seed the randomizer
+	r := rand.New(rand.NewPCG(1, uint64(time.Now().UnixNano())))
+
+	cr := cron.New()
+
+	_, err := cr.AddFunc(c.CronExpr, func() {
+		randomSoundIndex := r.IntN(len(c.Sounds))
+		err := playSound(ctx, logger, psbotURL, c.UserAgent, PsbotBody{Guild: guildID, Sound: c.Sounds[randomSoundIndex]})
+		if err != nil {
+			logger.Error("Playing sound", "sound", c.Sounds[randomSoundIndex], "err", err)
+		}
+	})
+	if err != nil {
+		return fmt.Errorf("start cron expr for %q: %w", c.Name, err)
+	}
+
+	logger.Info("Starting Cron")
+	cr.Start()
+
+	return nil
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -123,6 +155,12 @@ func main() {
 	for _, e := range c.Events {
 		eg.Go(func() error {
 			return StartPlaying(ctx2, logger.With("name", e.Name), e, c.GuildID, c.PsbotURL)
+		})
+	}
+
+	for _, cr := range c.CronEvents {
+		eg.Go(func() error {
+			return StartCron(ctx2, logger.With("name", cr.Name), cr, c.GuildID, c.PsbotURL)
 		})
 	}
 
